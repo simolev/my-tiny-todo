@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'maxpozdeev/mytinytodo',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => '1c27df9b3249fbede1a36d0f6b220635908cddcd',
+        'type' => 'project',
+        'install_path' => __DIR__ . '/../../../../',
+        'aliases' => array(),
+        'dev' => false,
+    ),
+    'versions' => array(
+        'erusev/parsedown' => array(
+            'pretty_version' => '1.7.x-dev',
+            'version' => '1.7.9999999.9999999-dev',
+            'reference' => 'f7285e7',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../erusev/parsedown',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'maxpozdeev/mytinytodo' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '1c27df9b3249fbede1a36d0f6b220635908cddcd',
+            'type' => 'project',
+            'install_path' => __DIR__ . '/../../../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-intl-normalizer' => array(
+            'pretty_version' => 'v1.32.0',
+            'version' => '1.32.0.0',
+            'reference' => '3833d7255cc303546435cb650316bff708a1c75c',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-intl-normalizer',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);
