@@ -451,7 +451,7 @@ select.form-input {
 
 /* Combined search+add box — same layout pattern as original #task box */
 .combined-input-c { flex-grow:1; display:flex; align-items:center; }
-.mtt-combined-box { position:relative; padding-left:22px; flex-grow:1; max-width:430px; overflow:hidden; }
+.mtt-combined-box { position:relative; padding-left:22px; flex-grow:1; max-width:430px; }
 
 #mtt.show-all-tasks .combined-input-c,
 #mtt.readonly .combined-input-c {
@@ -468,9 +468,14 @@ select.form-input {
 #search {
   color: var(--color-text-reduced);
   background: var(--color-bg);
-  height:1.35rem; padding:2px 40px 2px 4px;
+  height:1.35rem; padding:2px 4px; padding-right:20px;
   border:1px solid var(--color-border-default); border-radius:3px;
-  width:calc(100% + 24px); margin-left:-24px;
+  width:100%; margin-left:-24px;
+}
+#search:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px var(--color-border-focus-shadow);
 }
 
 /* Icons: absolute positioned over the input, same as original .mtt-taskbox-icon */
@@ -499,6 +504,8 @@ select.form-input {
   mask: url(images/search-cancel.svg) no-repeat; -webkit-mask: url(images/search-cancel.svg) no-repeat;
   display:none;
 }
+/* When cancel is visible, pad the input so text doesn't run under both icons */
+.mtt-combined-box.has-text #search { padding-right:38px; }
 
 #search_close { display:none; }
 
@@ -1407,7 +1414,7 @@ li.mtt-item-hidden { display:none; }
 
   .combined-input-c { width:100%; flex-grow:1; }
   .mtt-combined-box { max-width:100%; }
-  #search { padding:5px 40px 5px 4px; width:calc(100% + 22px); margin-left:-22px; }
+  #search { padding:5px; padding-right:18px; margin-left:-22px; }
   .mtt-hide-mobile { display:none; }
 
   #tagcloudSearch {
