@@ -32,7 +32,7 @@ var tabLists = {
     lastTime: 0,
     clear: function(){
         this._lists = {}; this._length = 0; this._order = [];
-        this._alltasks = { id:-1, showCompl:0, sort:3, name:_mtt.lang.get('alltasks') };
+        this._alltasks = { id:-1, showCompl:0, sort:5, name:_mtt.lang.get('alltasks') };
     },
     length: function(){ return this._length; },
     exists: function(id){ if(this._lists[id] || id==-1) return true; else return false; },
@@ -205,62 +205,90 @@ var mytinytodo = window.mytinytodo = _mtt = {
         });
 
 
-        $('#newtask_form').submit(function(){
-            submitNewTask(this);
-            return false;
-        });
-
-        $('#newtask_submit').mousedown(function(e){
-            e.preventDefault(); //keep the focus in #task
-            $('#newtask_form').submit();
-        });
-
         $('#newtask_adv').click(function(){
             showEditForm(1);
             return false;
         });
-
-        $('#task').keydown(function(event){
-            if(event.keyCode == 27) {
-                $(this).val('');
-            }
-        }).focusin(function(){
-            $('#task_placeholder').removeClass('placeholding');
-            $('#toolbar').addClass('mtt-intask');
-        }).focusout(function(){
-            if('' == $(this).val()) $('#task_placeholder').addClass('placeholding');
-            $('#toolbar').removeClass('mtt-intask');
-        });
-
 
         $('#search_close').click(function(){
             liveSearchToggle(0);
             return false;
         });
 
+        // Combined search+add input
+        function doAddTask() {
+            var title = $('#search').val().trim();
+            if (title === '' || flag.readOnly || !curList || !curList.id || curList.id == -1) return;
+
+            // Duplicate check: compare normalised (lowercase, collapsed spaces)
+            var normalised = title.toLowerCase().replace(/\s+/g, ' ');
+            for (var id in taskList) {
+                if (taskList[id].titleText &&
+                    taskList[id].titleText.toLowerCase().replace(/\s+/g, ' ') === normalised) {
+                    // flash the existing item instead of adding
+                    $('#taskrow_'+id).effect("highlight", {color:_mtt.theme.editTaskFlashColor}, 1500);
+                    $('#search').val('');
+                    $('#search_close').hide();
+                    $('#combined_submit').show();
+                    return;
+                }
+            }
+
+            $('#search').val('');
+            $('#search_close').hide();
+            $('#combined_submit').show();
+            var hadSearch = filter.search !== '';
+            filter.search = '';
+            _mtt.db.request('newTask', { list:curList.id, title: title, tag:_mtt.filter.getTags() }, function(json){
+                if(!json.total) return;
+                if (hadSearch) {
+                    loadTasks({clearTasklist:1});
+                } else {
+                    $('#total').text( parseInt($('#total').text()) + 1 );
+                    taskCnt.total++;
+                    var item = json.list[0];
+                    taskList[item.id] = item;
+                    taskOrder.push(parseInt(item.id));
+                    $('#tasklist').append(_mtt.prepareTaskStr(item));
+                    changeTaskOrder(item.id);
+                    $('#taskrow_'+item.id).effect("highlight", {color:_mtt.theme.newTaskFlashColor}, 2000);
+                    refreshTaskCnt();
+                }
+            });
+            flag.tagsChanged = true;
+        }
+
+        $('#combined_form').submit(function(e){
+            e.preventDefault();
+            doAddTask();
+            return false;
+        });
+
         $('#search').keyup(function(event){
             if(event.keyCode == 27) return;
-            if($(this).val() == '') $('#search_close').hide();  //actual value is only on keyup
-            else $('#search_close').show();
+            if($(this).val() == '') {
+                $('#search_close').hide();
+                $('#combined_submit').show();
+            } else {
+                $('#search_close').show();
+                $('#combined_submit').show();
+            }
             if (_mtt.options.instantSearch) {
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(function(){searchTasks()}, 400);
             }
         })
         .keydown(function(event){
-            if(event.keyCode == 27) {  // cancel on Esc (NB: no esc event on keypress in Chrome and on keyup in Opera)
+            if(event.keyCode == 27) {  // Esc: clear search
                 if($(this).val() != '') {
                     $(this).val('');
                     $('#search_close').hide();
+                    $('#combined_submit').show();
                     searchTasks();
                 }
                 else {
                     liveSearchToggle(0);
                 }
-                return false; //need to return false in firefox (for AJAX?)
-            }
-            else if ( event.keyCode == 13 ) {
-                searchTasks(1);
                 return false;
             }
         }).focusin(function(){
@@ -625,6 +653,42 @@ var mytinytodo = window.mytinytodo = _mtt = {
             /*$('#cmenu_note').hide();*/
             $("#lists ul").sortable('disable');
             $("#mtt").addClass("touch-device");
+
+            // Swipe-left to delete
+            var swipeState = null;
+            $('#tasklist').on('touchstart', '> li.task-row', function(e) {
+                var t = e.originalEvent.touches[0];
+                swipeState = { id: $(this).data('id'), startX: t.clientX, startY: t.clientY, el: $(this), moved: false };
+            });
+            $('#tasklist').on('touchmove', '> li.task-row', function(e) {
+                if (!swipeState) return;
+                var t = e.originalEvent.touches[0];
+                var dx = t.clientX - swipeState.startX;
+                var dy = t.clientY - swipeState.startY;
+                if (!swipeState.moved && Math.abs(dy) > Math.abs(dx)) {
+                    // vertical scroll — cancel swipe
+                    swipeState = null;
+                    return;
+                }
+                if (dx > 10) {
+                    swipeState.moved = true;
+                    e.preventDefault();
+                    swipeState.el.addClass('swipe-delete-hint');
+                }
+            });
+            $('#tasklist').on('touchend', '> li.task-row', function(e) {
+                if (!swipeState || !swipeState.moved) { swipeState = null; return; }
+                var t = e.originalEvent.changedTouches[0];
+                var dx = t.clientX - swipeState.startX;
+                var el = swipeState.el;
+                var id = swipeState.id;
+                swipeState = null;
+                el.removeClass('swipe-delete-hint');
+                if (dx > 80) {
+                    el.addClass('swipe-deleting');
+                    setTimeout(function() { deleteTask(id); }, 200);
+                }
+            });
         }
 
 
@@ -812,8 +876,6 @@ var mytinytodo = window.mytinytodo = _mtt = {
     {
         if(filter.search != '') {
             //filter.search = '' will be in tabSelect
-            $('#searchbarkeyword').text('');
-            $('#searchbar').hide();
         }
         $('#page_tasks').hide();
         $('#tasklist').html('');
@@ -1686,6 +1748,8 @@ function tabSelect(elementOrId)
     flag.tagsChanged = true;
     cancelTagFilter(0, 1);
     setTaskview(0);
+    // Always sort alphabetically: uncompleted then completed, both A-Z case-insensitive
+    curList.sort = 5;
 
     if (isFirstLoad && filter.search != '') {
         $('#search').val(filter.search);
@@ -1744,19 +1808,16 @@ function listMenuHover(el, menu)
 
 function deleteTask(id)
 {
-    mttConfirm( _mtt.lang.get('confirmDelete'), function()
-    {
-        flag.tagsChanged = true;
-        _mtt.db.request('deleteTask', {id:id}, function(json){
-            if (!parseInt(json.total)) return;
-            var item = json.list[0];
-            taskOrder.splice($.inArray(id,taskOrder), 1);
-            $('#taskrow_'+id).effect("highlight", {color:_mtt.theme.deleteTaskFlashColor}, 'normal', function(){ $(this).remove() });
-            changeTaskCnt(taskList[id], -1);
-            refreshTaskCnt();
-            delete taskList[id];
-        });
-    })
+    flag.tagsChanged = true;
+    _mtt.db.request('deleteTask', {id:id}, function(json){
+        if (!parseInt(json.total)) return;
+        var item = json.list[0];
+        taskOrder.splice($.inArray(id,taskOrder), 1);
+        $('#taskrow_'+id).effect("highlight", {color:_mtt.theme.deleteTaskFlashColor}, 'normal', function(){ $(this).remove() });
+        changeTaskCnt(taskList[id], -1);
+        refreshTaskCnt();
+        delete taskList[id];
+    });
     return false;
 };
 
@@ -1772,6 +1833,15 @@ function completeTask(id, ch)
         else $('#taskrow_'+id).removeClass('task-completed');
         taskList[id] = item;
         changeTaskCnt(taskList[id], 0);
+        // Reset the combined search/add input on any check/uncheck and reload
+        if (filter.search !== '') {
+            filter.search = '';
+            $('#search').val('');
+            $('#search_close').hide();
+            $('#combined_submit').show();
+            loadTasks({clearTasklist:1});
+            return;
+        }
         if(item.compl && !curList.showCompl) {
             delete taskList[id];
             taskOrder.splice($.inArray(id,taskOrder), 1);
@@ -1912,16 +1982,17 @@ function showEditForm(isAdd)
         $('#page_taskedit').removeClass('mtt-inedit').addClass('mtt-inadd');
         form.isadd.value = 1;
         if (_mtt.options.autotag) form.tags.value = _mtt.filter.getTags();
-        if ($('#task').val() != '')
+        if ($('#search').val() != '' && filter.search == '')
         {
-            _mtt.db.request('parseTaskStr', { list:curList.id, title:$('#task').val(), tag:_mtt.filter.getTags() }, function(json){
+            // value is a pending new task title, not a search query
+            _mtt.db.request('parseTaskStr', { list:curList.id, title:$('#search').val(), tag:_mtt.filter.getTags() }, function(json){
                 if(!json) return;
                 form.task.value = json.title
                 form.tags.value = (form.tags.value != '') ? form.tags.value +', '+ json.tags : json.tags;
                 form.prio.value = json.prio;
                 form.duedate.value = json.duedate;
-                $('#task').val('');
-
+                $('#search').val('');
+                $('#search_close').hide();
             });
         }
     }
@@ -2085,9 +2156,8 @@ function liveSearchToggle(toSearch, dontLoad)
         if($('#search').val() != '') {
             filter.search = '';
             $('#search').val('');
-            $('#searchbarkeyword').text('');
-            $('#searchbar').hide();
             $('#search_close').hide();
+            $('#combined_submit').show();
             if(!dontLoad) loadTasks();
         }
 
@@ -2100,11 +2170,6 @@ function searchTasks(force)
     var newkeyword = $('#search').val();
     if(newkeyword == filter.search && !force) return false;
     filter.search = newkeyword;
-    if (filter.search != '') {
-        $('#searchbarkeyword').text(filter.search);
-        $('#searchbar').fadeIn('fast');
-    }
-    else $('#searchbar').fadeOut('fast');
     loadTasks();
     return false;
 };

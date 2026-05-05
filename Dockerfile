@@ -4,9 +4,8 @@ FROM php:8.2-apache
 # Install system dependencies needed for the SQLite extension.
 RUN apt-get update && \
     apt-get install -y \
-    libsqlite3-dev \
-    git \
-    unzip
+    libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the application source code into the container's web directory.
 COPY app /var/www/html/

@@ -449,69 +449,59 @@ select.form-input {
   align-items: center;
 }
 
-/* Quick Task Add */
-.taskbox-c { flex-grow:1; display:flex; align-items:center; }
-.mtt-taskbox { position:relative; padding-left:22px; /*input padding+border*/ flex-grow:1; max-width:430px; }
-#task {
-  color: var(--color-text-reduced);
-  background: var(--color-bg);
-  height:1.35rem; padding:2px 4px; padding-right:20px; border:1px solid var(--color-border-default); border-radius:3px; width:100%; margin-left:-24px;
-}
-#mtt.show-all-tasks .taskbox-c,
-#mtt.readonly .taskbox-c {
+/* Combined search+add box — same layout pattern as original #task box */
+.combined-input-c { flex-grow:1; display:flex; align-items:center; }
+.mtt-combined-box { position:relative; padding-left:22px; flex-grow:1; max-width:430px; overflow:hidden; }
+
+#mtt.show-all-tasks .combined-input-c,
+#mtt.readonly .combined-input-c {
   visibility: hidden;
 }
 
-.mtt-taskbox-icon {
-  width:16px; height:16px;
-  position:absolute;
-  top:50%;
-  right:2px;
-  margin-top:-8px;
-  cursor:pointer;
-  mask: url(images/add.svg) no-repeat; -webkit-mask: url(images/add.svg) no-repeat;
-  background-color: var(--color-btn-reduced);
-  transition: background-color 0.1s ease-in;
-}
-.mtt-taskbox-icon:hover {
-  background-color: var(--color-btn-reduced-hover);
-}
 #newtask_adv { margin-left:0.5rem; }
 #newtask_adv span {
   mask: url(images/newtask-ext.svg) no-repeat; -webkit-mask: url(images/newtask-ext.svg) no-repeat;
   background-color: var(--color-btn-reduced);
 }
 
-
-/* Live Search */
+/* The input stretches across the full box; icons sit absolute on top */
 #search {
- color: var(--color-text-reduced);
- background: var(--color-bg);
- height:1.35rem; padding:2px 20px; width:100%; margin-left:-42px; /*padding+border*/
- border:1px solid var(--color-border-default); border-radius:10px;
+  color: var(--color-text-reduced);
+  background: var(--color-bg);
+  height:1.35rem; padding:2px 40px 2px 4px;
+  border:1px solid var(--color-border-default); border-radius:3px;
+  width:calc(100% + 24px); margin-left:-24px;
 }
-#search_close { display:none; }
 
-.mtt-searchbox { position:relative; padding-left:42px; /*input padding+border*/ }
-.mtt-searchbox-icon { width:16px; height:16px; position:absolute; top:50%; margin-top:-8px; }
-.mtt-searchbox-icon.mtt-icon-search {
-  left:4px;
-  mask: url(images/search.svg) no-repeat; -webkit-mask: url(images/search.svg) no-repeat;
-  background-color: var(--color-btn-reduced);
-}
-.mtt-searchbox-icon.mtt-icon-cancelsearch {
-  right:4px;
+/* Icons: absolute positioned over the input, same as original .mtt-taskbox-icon */
+.mtt-combined-icon {
+  width:16px; height:16px;
+  position:absolute;
+  top:50%; margin-top:-8px;
   cursor:pointer;
-  mask: url(images/search-cancel.svg) no-repeat; -webkit-mask: url(images/search-cancel.svg) no-repeat;
   background-color: var(--color-btn-reduced);
   transition: background-color 0.1s ease-in;
+  border:none; padding:0;
+  /* reset button styles */
+  -webkit-appearance:none; appearance:none;
+  background-image:none; /* overridden per icon below */
 }
-.mtt-searchbox-icon.mtt-icon-cancelsearch:hover {
-  background-color: var(--color-btn-reduced-hover);
+.mtt-combined-icon:hover { background-color: var(--color-btn-reduced-hover); }
+
+/* Add/submit icon on the right */
+.mtt-combined-icon.mtt-icon-add {
+  right:2px;
+  mask: url(images/add.svg) no-repeat; -webkit-mask: url(images/add.svg) no-repeat;
+}
+/* Cancel/clear icon — to the left of the add icon, hidden when input is empty */
+.mtt-combined-icon.mtt-icon-cancelsearch {
+  right:22px;
+  mask: url(images/search-cancel.svg) no-repeat; -webkit-mask: url(images/search-cancel.svg) no-repeat;
+  display:none;
 }
 
-#searchbar { font-size:1rem; font-weight:normal; display:none;  margin-top:0.5rem; }
-#searchbarkeyword { font-weight:bold; }
+#search_close { display:none; }
+
 
 /* */
 #page_tasks h3 { display:flex; align-items:baseline; }
@@ -716,6 +706,19 @@ li.task-row.task-completed .duedate { /*font-size:0.8rem;*/ display:none; }
 #tasklist li.task-row.task-completed  { opacity:0.6; }
 #tasklist li.task-row.task-completed .task-through { text-decoration:line-through; }
 #tasklist li.task-row.task-completed:hover { opacity:1.0; }
+
+/* Swipe-to-delete */
+#tasklist li.task-row {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+#tasklist li.task-row.swipe-delete-hint {
+  transform: translateX(6px);
+  background: linear-gradient(to right, transparent 40%, var(--color-error-bg) 100%);
+}
+#tasklist li.task-row.swipe-deleting {
+  transform: translateX(100%);
+  opacity: 0;
+}
 
 #tasklist li.task-row.not-in-tagpreview  {
   opacity: 0.1;
@@ -1402,11 +1405,10 @@ li.mtt-item-hidden { display:none; }
   #task { padding:5px; padding-right:18px; margin-left:-22px; }
   #task_placeholder span { padding:6px; }
 
-  .searchbox-c { width:30%; max-width:190px; }
-  #toolbar.mtt-intask .searchbox-c { display:none; }
-  #toolbar.mtt-insearch .taskbox-c { display:none; }
-  #toolbar.mtt-insearch .searchbox-c { width:100%; max-width:100%; }
-  #search { padding:5px 20px; border-radius:15px; }
+  .combined-input-c { width:100%; flex-grow:1; }
+  .mtt-combined-box { max-width:100%; }
+  #search { padding:5px 40px 5px 4px; width:calc(100% + 22px); margin-left:-22px; }
+  .mtt-hide-mobile { display:none; }
 
   #tagcloudSearch {
     margin-top: 0.5rem;

@@ -82,25 +82,17 @@ $().ready(function(){
 <div id="toolbar">
 
 <div class="newtask-n-search-container">
-<div class="taskbox-c">
-  <div class="mtt-taskbox">
-   <form id="newtask_form" method="post">
-     <input type="text" name="task" value="" maxlength="250" id="task" autocomplete="off" placeholder="<?php _e('htab_newtask');?>">
-     <div id="newtask_submit" class="mtt-taskbox-icon" title="<?php _e('btn_add');?>"></div>
-   </form>
+<div class="combined-input-c">
+  <div class="mtt-combined-box">
+    <form id="combined_form" method="post">
+      <input type="text" name="search" value="" maxlength="250" id="search" autocomplete="off" placeholder="What do you need?">
+      <div id="search_close" class="mtt-combined-icon mtt-icon-cancelsearch" title="Clear"></div>
+      <button id="combined_submit" class="mtt-combined-icon mtt-icon-add" type="submit" title="<?php _e('btn_add');?>"></button>
+    </form>
   </div>
   <a href="#" id="newtask_adv" class="mtt-img-button" title="<?php _e('advanced_add');?>"><span></span></a>
 </div>
-<div class="searchbox-c">
-  <div class="mtt-searchbox">
-    <input type="text" name="search" value="" maxlength="250" id="search" autocomplete="off">
-    <div class="mtt-searchbox-icon mtt-icon-search"></div>
-    <div id="search_close" class="mtt-searchbox-icon mtt-icon-cancelsearch"></div>
-  </div>
 </div>
-</div>
-
-<div id="searchbar" style="display:none"><?php _e('searching');?> <span id="searchbarkeyword"></span></div>
 
 <div id="mtt-tag-toolbar" style="display:none">
   <div class="tag-toolbar-content">
