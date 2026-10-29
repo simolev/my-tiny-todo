@@ -1,0 +1,91 @@
+# Namespace definition
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-tiny-todo
+---
+# Deployment definition
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-tiny-todo
+  namespace: my-tiny-todo
+  labels:
+    app: my-tiny-todo
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: my-tiny-todo
+  template:
+    metadata:
+      labels:
+        app: my-tiny-todo
+    spec:
+      containers:
+      - name: my-tiny-todo
+        image: simlev/my-tiny-todo
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: my-tiny-todo-db
+          mountPath: /var/www/html/db
+      volumes:
+      - name: my-tiny-todo-db
+        persistentVolumeClaim:
+          claimName: my-tiny-todo-db
+---
+# Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-tiny-todo-service
+  namespace: my-tiny-todo
+spec:
+  selector:
+    app: my-tiny-todo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+# Ingress definition
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-tiny-todo-ingress
+  namespace: my-tiny-todo
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: "nginx"
+  tls:
+  - hosts:
+    - spesa.levy.it
+    secretName: nginx-tls-secret
+  rules:
+  - host: spesa.levy.it
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-tiny-todo-service
+            port:
+              number: 80
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-tiny-todo-db
+  namespace: my-tiny-todo
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
